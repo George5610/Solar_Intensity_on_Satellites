@@ -20,7 +20,6 @@ SHC = 900 # specific heat capacity of aluminium
 #FUNCTIONS
 #
 scene = canvas(title='Solar Thermal Radiation Model  ', x=0, y=0, width=1500, height=400)
-#cf = 1 # initial code freq
 running = True
 def Run(b):
     global running, remember_dt, dt
@@ -124,7 +123,7 @@ while True: # set true for infinte or set to a max time
         PowerIn = Intensity * AF * A
         PowerOut = sigma * AF * A * Tsat**4 # energy emitted
         PowerNet = PowerIn - PowerOut
-        Tsat = PowerNet / (sat.m * SHC) + Tsat
+        Tsat = (PowerNet / (sat.m * SHC) * dt) + Tsat
 
         if not counter % 100: # plot sampling rate
             #plots
