@@ -1,5 +1,6 @@
 from vpython import *
 import math
+
 G = 6.67e-11 # gravitatinal constant (m^3 kg^-1 s^-2)
 RS = 696.35e6 # radius of the sun (m)
 MS = 1.989e30 # mass of the sun (kg)
@@ -10,9 +11,25 @@ TSun = 5778 # temp of the sun (K)
 sigma = 5.670374419e-8 # Stefan–Boltzmann constant
 ER = 1.50e11 # radius of earths orbit (m)
 
-scene = canvas(title='Solar Thermal Radiation Model', x=0, y=0, width=1500, height=800)
+scene = canvas(title='Solar Thermal Radiation Model  ', x=0, y=0, width=1500, height=800)
+running = True
+def Run(b):
+    global running, remember_dt, dt
+    running = not running
+    if running:
+        b.text = "Pause"
+        dt = remember_dt
+    else:
+        b.text = "Run"
+        remember_dt = dt
+        dt = 0
+    return
 
-Sun = sphere(pos = vector(0,0,0), radius = RS, color = color.orange)
+button(text="Pause", pos=scene.title_anchor, bind=Run)
+
+
+
+Sun = sphere(pos = vector(0,0,0), radius = RS, texture = "https://i.imgur.com/XdRTvzj.jpeg")
 Sun.m = MS
 Sun.p = Sun.m * vector(0,0,0)
 
@@ -20,7 +37,19 @@ sat = box(pos = vector(ER,0,0), radius = 0.05 * RS, make_trail=True)
 sat.m = 100 # mass of the satellite (kg)
 sat.p = sat.m * vector(0,20000,0) # inital satellite vector
 
-scene.camera.follow(sat) # lock the camera to the sat
+def cam(b):
+    global running
+    running = not running
+    if running:
+        b.text = "Sat"
+        scene.camera.follow(Sun) # lock the camera to the sat
+    else:
+        b.text = "Sun"
+        scene.camera.follow(sat) # lock the camera to the sat
+    return
+
+button(text="Sat", pos=scene.title_anchor, bind=cam)
+
 
 t = 0 # set initial time
 dt = 1000 # time step
@@ -35,8 +64,6 @@ while True: # set true for infinte or set to a max time
   magR = mag(r)
   magRkm = magR / 1000
   Intensity = HR / ((4*math.pi) * magR**2) # wattage per meter squared at the sats distance from the sun
-
   print(Intensity, " Watts/m^2 at a distance of ", magRkm, " km")
-  scene.caption = Intensity
-
+  scene.caption = ('\n',Intensity, " Watts/m^2")
   t = t + dt
