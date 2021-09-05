@@ -8,16 +8,19 @@ G = 6.67e-11 # gravitatinal constant (m^3 kg^-1 s^-2)
 RS = 696.35e6 # radius of the sun (m)
 MS = 1.989e30 # mass of the sun (kg)
 HR = 3.95e26 # heat radiation from the sun "https://physics.stackexchange.com/questions/57392/calculating-the-amount-of-heat-energy-radiated-by-sun"
-AF = 0.70 # albedo of polished aluminium
+AF = 0.30 # absorbsion factor of polished aluminium
 Tsat = 288 # temperiture of the sat (K)
 TSun = 5778 # temp of the sun (K)
 sigma = 5.670374419e-8 # Stefan–Boltzmann constant
 ER = 1.50e11 # radius of earths orbit (m)
+A = 1 # area of the sat
+SHC = 900 # specific heat capacity of aluminium
 
 #
 #FUNCTIONS
 #
-scene = canvas(title='Solar Thermal Radiation Model  ', x=0, y=0, width=1500, height=800)
+scene = canvas(title='Solar Thermal Radiation Model  ', x=0, y=0, width=1500, height=400)
+
 running = True
 def Run(b):
     global running, remember_dt, dt
@@ -36,7 +39,7 @@ button(text="Pause", pos=scene.title_anchor, bind=Run)
 #CAMERA BUTTON
 def cam(b):
     global running
-    running = not running
+    #running = not running
     if running:
         b.text = "Sat"
         scene.camera.follow(Sun) # lock the camera to the sat
@@ -48,17 +51,16 @@ def cam(b):
 button(text="Sat", pos=scene.title_anchor, bind=cam)
 
 #ANIMATION SPEED
-scene.caption = "Vary the rotation speed: \n\n"
+scene.caption = "\nVary the rotation speed: \n\n"
 
 def setspeed(s):
     wt.text = '{:1.2f}'.format(s.value)
 
-sl = slider(min=1, max=10000, value=5000, length=220, bind=setspeed, right=15)
+sl = slider(min=1, max=10000, value=1000, length=400, bind=setspeed, right=15)
 
 wt = wtext(text='{:1.2f}'.format(sl.value))
 
 scene.append_to_caption(' Time Step \n')
-
 
 #
 #CREATING OBJECTS
@@ -69,15 +71,23 @@ Sun.p = Sun.m * vector(0,0,0)
 
 sat = box(pos = vector(ER,0,0), radius = 0.05 * RS, make_trail=True)
 sat.m = 100 # mass of the satellite (kg)
-sat.p = sat.m * vector(0,20000,5000) # inital satellite vector
+sat.p = sat.m * vector(0,20000,0) # inital satellite vector
 
 #
 #LOOP AND CALCULATIONS
 #
 t = 0 # set initial time
 
+g1 = graph(scroll=True, width=1500, height=400, fast=False, xmin=0, xmax=100000, title="Intensity of Solar Radiation for distance", xtitle="Distance (km)", ytitle="Intensity (W/m^2)")
+g2 = graph(scroll=True, width=1500, height=400, fast=False, xmin=0, xmax=1e100, title="Intensity of Solar Radiation over time", xtitle="Time (s)", ytitle="Intensity (W/m^2)")
+g3 = graph(scroll=True, width=1500, height=400, fast=False, xmin=0, xmax=1e100, title="Temp of Sat", xtitle="Time (s)", ytitle="Temp (K)")
+
+g1 = gcurve(graph=g1, color=color.green)
+g2 = gcurve(graph=g2, color=color.red)
+g3 = gcurve(graph=g3, color=color.blue)
+
 while True: # set true for infinte or set to a max time
-    rate(400) # max frequency of the while loop (Hz)
+    rate(200) # max frequency of the while loop (Hz)
     if running:
         #sat position calculations
         dt = sl.value # time step
@@ -91,5 +101,14 @@ while True: # set true for infinte or set to a max time
         magRkm = magR / 1000
         Intensity = HR / ((4*math.pi) * magR**2) # wattage per meter squared at the sats distance from the sun
         print(Intensity, " Watts/m^2 at a distance of ", magRkm, " km")
-        scene.append_to_caption('\n',Intensity, " Watts/m^2")
         t = t + dt
+        g1.plot(magRkm, Intensity)
+        g2.plot(t, Intensity)
+
+        # thermal calculations
+        PowerIn = Intensity * AF * A
+        PowerOut = sigma * AF * A * Tsat**4 # energy emitted
+        PowerNet = PowerIn - PowerOut
+        Tsat = PowerNet / (sat.m * SHC) + Tsat
+        print(Tsat)
+        g3.plot(t, Tsat)
