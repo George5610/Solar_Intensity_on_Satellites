@@ -1,6 +1,8 @@
 from vpython import *
 from math import pi
 
+# https://www.youtube.com/watch?v=xqsMR_-JBig
+
 #
 # VARAIBLES
 #
@@ -8,13 +10,16 @@ G = 6.67e-11 # gravitatinal constant (m^3 kg^-1 s^-2)
 RS = 696.35e6 # radius of the sun (m)
 MS = 1.989e30 # mass of the sun (kg)
 HR = 3.95e26 # heat radiation from the sun "https://physics.stackexchange.com/questions/57392/calculating-the-amount-of-heat-energy-radiated-by-sun"
-AF = 0.30 # absorbsion factor of polished aluminium
+AF = 0.91 # absorbsion factor of CFC https://ttu-ir.tdl.org/bitstream/handle/2346/64297/ICES_2015_submission_24.pdf?sequence=1
+EF = 0.83 # emission factor of CFC https://ttu-ir.tdl.org/bitstream/handle/2346/64297/ICES_2015_submission_24.pdf?sequence=1
 Tsat = 288 # temperiture of the sat (K)
 TSun = 5778 # temp of the sun (K)
 sigma = 5.670374419e-8 # Stefan–Boltzmann constant
-ER = 1.50e11 # radius of earths orbit (m)
-A = 1 # area of the sat
-SHC = 900 # specific heat capacity of aluminium
+OR = 1.50e11 # radius of the orbit (m)
+#the following two can stay as a ratio of 1 as they are always used as a ratio
+At = 1 #  total area of the satilite
+Ap = 0.2 # area perpendicular to the solar radiation
+SHC = 800 # specific heat capacity of CFC https://material-properties.org/carbon-fiber-application-price/
 
 #
 #FUNCTIONS
@@ -55,7 +60,7 @@ scene.caption = "\nChange Time Step: \n\n"
 def setspeed(s):
     wt.text = '{:1.2f}'.format(s.value)
 
-sl = slider(min=1, max=10000, value=1, length=400, bind=setspeed, right=15)
+sl = slider(min=0, max=10000, value=1, length=400, bind=setspeed, right=15)
 
 wt = wtext(text='{:1.2f}'.format(sl.value))
 
@@ -80,9 +85,9 @@ Sun = sphere(pos = vector(0,0,0), radius = RS, texture = "https://i.imgur.com/Xd
 Sun.m = MS
 Sun.p = Sun.m * vector(0,0,0)
 
-sat = box(pos = vector(ER,0,0), radius = 0.05 * RS, make_trail=True)
+sat = box(pos = vector(OR,0,0), radius = 0.05 * RS, make_trail=True)
 sat.m = 100 # mass of the satellite (kg)
-sat.p = sat.m * vector(0,20000,0) # inital satellite vector
+sat.p = sat.m * vector(0,30000,0) # inital satellite vector
 
 #
 #GRAPHS
@@ -120,10 +125,7 @@ while True: # set true for infinte or set to a max time
         Intensity = HR / ((4*pi) * magR**2) # wattage per meter squared at the sats distance from the sun
 
         # thermal calculations
-        PowerIn = Intensity * AF * A
-        PowerOut = sigma * AF * A * Tsat**4 # energy emitted
-        PowerNet = PowerIn - PowerOut
-        Tsat = (PowerNet / (sat.m * SHC) * dt) + Tsat
+        Tsat = ((Ap / At) * (Intensity / sigma) * (AF / EF))**0.25 # from https://core.ac.uk/download/pdf/42849156.pdf
 
         if not counter % 100: # plot sampling rate
             #plots
